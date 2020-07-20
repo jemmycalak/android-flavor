@@ -1,0 +1,126 @@
+// Get time stamp from git commit time to create a version code e.g.: 1566893405
+def gitVersionCodeTime = { ->
+    try {
+        def code = new ByteArrayOutputStream()
+
+        exec {
+            commandLine 'git', 'log', '-1', '--format=%ct'
+            standardOutput = code
+        }
+
+        return code.toString().toInteger()
+    }
+    catch (ignored) {
+        return 1
+    }
+}
+
+// Get date from git commit time to create a version name e.g.: 2019.08.27
+// Temporary use for developing. please delete when git tag implemented
+def gitVersionNameTime = { ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+
+        exec {
+            commandLine 'git', 'log', '-1', '--format=%cd', '--date=format:%Y.%m.%d'
+            standardOutput = stdout
+        }
+
+        return stdout.toString().trim()
+    }
+    catch (ignored) {
+        return null
+    }
+}
+
+ext.flavorConfig = {
+    flavorDimensions "client"
+
+    productFlavors {
+        modeDev {
+            dimension "client"
+            versionCode gitVersionCodeTime()
+            versionName gitVersionNameTime() + "-dev"
+            ext.customApplicationId = "com.jemmy.calak"
+            applicationIdSuffix ".modedev"
+            buildConfigField 'String', 'BASE_URL', BASE_URL_DEV
+            buildConfigField 'String', 'BASE_URL_PRICING', BASE_URL_PRICING_DEV
+            buildConfigField 'String', 'WEB_URL', WEB_URL_DEV
+            buildConfigField 'String', 'CC_WEB_URL', CC_WEB_URL_DEV
+            buildConfigField 'String', 'WEB_AUTHORIZATION', WEB_AUTHORIZATION
+            buildConfigField 'String', 'BASEURL_SOCIAL_MEDIA_LOGIN_WEBVIEW', BASEURL_SOCIAL_MEDIA_LOGIN_WEBVIEW_DEV
+            buildConfigField 'String', 'AWS_S3_BUCKET', AWS_S3_BUCKET_DEV
+            buildConfigField 'String', 'DEEP_LINK', DEEP_LINK
+            buildConfigField 'String', 'AF_DEV_KEY', AF_DEV_KEY
+            buildConfigField 'String', 'AUTH_FOR_PROMOTIONS', AUTH_FOR_PROMOTIONS
+            buildConfigField 'String', 'AUTH_KEY', AUTH_KEY_DEV
+            resValue "string", "google_maps_key", (project.findProperty("GOOGLE_MAPS_API_KEY") ?: "")
+            resValue "string", "walktrough", "show"
+            resValue "string", "app_name", "Flavor-Dev"
+        }
+
+        modeTest {
+            dimension "client"
+            versionCode gitVersionCodeTime() + 1
+            versionName gitVersionNameTime() + "-test"
+            ext.customApplicationId = "com.jemmy.calak"
+            applicationIdSuffix ".modetest"
+            buildConfigField 'String', 'BASE_URL', BASE_URL_TEST
+            buildConfigField 'String', 'BASE_URL_PRICING', BASE_URL_PRICING_TEST
+            buildConfigField 'String', 'WEB_URL', WEB_URL_TEST
+            buildConfigField 'String', 'CC_WEB_URL', CC_WEB_URL_TEST
+            buildConfigField 'String', 'WEB_AUTHORIZATION', WEB_AUTHORIZATION
+            buildConfigField 'String', 'BASEURL_SOCIAL_MEDIA_LOGIN_WEBVIEW', BASEURL_SOCIAL_MEDIA_LOGIN_WEBVIEW_TEST
+            buildConfigField 'String', 'AWS_S3_BUCKET', AWS_S3_BUCKET_TEST
+            buildConfigField 'String', 'DEEP_LINK', DEEP_LINK
+            buildConfigField 'String', 'AF_DEV_KEY', AF_DEV_KEY
+            buildConfigField 'String', 'AUTH_FOR_PROMOTIONS', AUTH_FOR_PROMOTIONS
+            buildConfigField 'String', 'AUTH_KEY', AUTH_KEY_DEV
+            resValue "string", "google_maps_key", (project.findProperty("GOOGLE_MAPS_API_KEY") ?: "")
+            resValue "string", "walktrough", "show"
+            resValue "string", "app_name", "Flavor-Test"
+        }
+
+        modeProd {
+            dimension "client"
+            versionCode gitVersionCodeTime() + 2
+            versionName gitVersionNameTime()
+            ext.customApplicationId = "com.jemmy.calak"
+            buildConfigField 'String', 'BASE_URL', BASE_URL_PROD
+            buildConfigField 'String', 'BASE_URL_PRICING', BASE_URL_PRICING_PROD
+            buildConfigField 'String', 'WEB_URL', WEB_URL_PROD
+            buildConfigField 'String', 'CC_WEB_URL', CC_WEB_URL_PROD
+            buildConfigField 'String', 'WEB_AUTHORIZATION', WEB_AUTHORIZATION
+            buildConfigField 'String', 'BASEURL_SOCIAL_MEDIA_LOGIN_WEBVIEW', BASEURL_SOCIAL_MEDIA_LOGIN_WEBVIEW_PROD
+            buildConfigField 'String', 'AWS_S3_BUCKET', AWS_S3_BUCKET_PROD
+            buildConfigField 'String', 'DEEP_LINK', DEEP_LINK
+            buildConfigField 'String', 'AF_DEV_KEY', AF_DEV_KEY
+            buildConfigField 'String', 'AUTH_FOR_PROMOTIONS', AUTH_FOR_PROMOTIONS
+            buildConfigField 'String', 'AUTH_KEY', AUTH_KEY_PROD
+            resValue "string", "google_maps_key", (project.findProperty("GOOGLE_MAPS_API_KEY") ?: "")
+            resValue "string", "walktrough", "show"
+            resValue "string", "app_name", "Flavor"
+        }
+    }
+    sourceSets {
+        modeDev {
+            res.srcDirs = ['src/modeDev/res']
+        }
+        modeTest {
+            res.srcDirs = ['src/modeTest/res']
+        }
+        modeProd {
+            res.srcDirs = ['src/modeProd/res']
+        }
+    }
+
+    productFlavors.all { flavor ->
+        if (flavor.hasProperty('customApplicationId') && isApplicationProject()) {
+            flavor.applicationId = flavor.customApplicationId
+        }
+    }
+}
+
+def isApplicationProject() {
+    return project.android.class.simpleName.startsWith('BaseAppModuleExtension')
+}
